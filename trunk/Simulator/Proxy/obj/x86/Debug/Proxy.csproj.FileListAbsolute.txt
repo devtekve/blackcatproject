@@ -1,0 +1,5 @@
+D:\workspace\BlackCatBot\Simulator\Proxy\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\workspace\BlackCatBot\Simulator\Proxy\bin\Debug\Proxy.exe
+D:\workspace\BlackCatBot\Simulator\Proxy\bin\Debug\Proxy.pdb
+D:\workspace\BlackCatBot\Simulator\Proxy\obj\x86\Debug\Proxy.exe
+D:\workspace\BlackCatBot\Simulator\Proxy\obj\x86\Debug\Proxy.pdb

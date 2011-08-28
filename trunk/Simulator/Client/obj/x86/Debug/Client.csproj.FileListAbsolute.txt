@@ -1,0 +1,9 @@
+D:\workspace\BlackCatBot\Simulator\Client\bin\Debug\Client.exe
+D:\workspace\BlackCatBot\Simulator\Client\bin\Debug\Client.pdb
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\Client.ClientForm.resources
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\Client.Properties.Resources.resources
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\GenerateResource.read.1.tlog
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\GenerateResource.write.1.tlog
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\Client.exe
+D:\workspace\BlackCatBot\Simulator\Client\obj\x86\Debug\Client.pdb
