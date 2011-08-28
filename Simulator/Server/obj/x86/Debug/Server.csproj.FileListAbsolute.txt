@@ -1,0 +1,5 @@
+D:\workspace\BlackCatBot\Simulator\Server\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\workspace\BlackCatBot\Simulator\Server\bin\Debug\Server.exe
+D:\workspace\BlackCatBot\Simulator\Server\bin\Debug\Server.pdb
+D:\workspace\BlackCatBot\Simulator\Server\obj\x86\Debug\Server.exe
+D:\workspace\BlackCatBot\Simulator\Server\obj\x86\Debug\Server.pdb

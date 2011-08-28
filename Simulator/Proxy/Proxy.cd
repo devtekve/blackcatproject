@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="FullSignature">
+  <Class Name="Proxy.Program">
+    <Position X="0.5" Y="0.5" Width="2" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Proxy.Proxy">
+    <Position X="0.5" Y="2" Width="7.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAKCQAACACBAAACCEAAACAAAAAAIAAgAgAAAAg=</HashCode>
+      <FileName>Proxy.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Proxy.Acceptor">
+    <Position X="0.75" Y="6.75" Width="3.25" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAEAIAAAAgACAAAAAAAAABAAAAACAgAA=</HashCode>
+      <FileName>Acceptor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Proxy.Connection">
+    <Position X="0.75" Y="10.25" Width="6" />
+    <TypeIdentifier>
+      <HashCode>AARQEAAgQAACgAgQAABghAAIBAAAAAAFJABQCgBAICE=</HashCode>
+      <FileName>Connection.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Proxy.Security">
+    <Position X="5.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAkAAAEAAAAAAAAEAAAAAAAIAAAAAQAAAAIAAAAQA=</HashCode>
+      <FileName>Security.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="Proxy.Packet">
+    <Position X="8.5" Y="0.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAgAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAIAQAA=</HashCode>
+      <FileName>Packet.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Enum Name="Proxy.ConnectionTypes">
+    <Position X="3.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAA=</HashCode>
+      <FileName>ConnectionType.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
