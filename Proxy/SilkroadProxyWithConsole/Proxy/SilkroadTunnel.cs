@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using SilkroadSecurityApi;
 using System.Net.Sockets;
-using System.Net;
 using System.Threading;
+using SilkroadSecurityApi;
 
 namespace Proxy
 {
     class SilkroadTunnel
     {
+        #region don't care
         private Context _local;
         private Context _remote;
 
@@ -67,10 +65,9 @@ namespace Proxy
                 _remote.MySocket.Connect(ip, port);
                 HandleNetworkDataStream();
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Disconnect();
-                Console.WriteLine(exception.ToString());
+                Dispose();
             }
         }
 
@@ -81,7 +78,16 @@ namespace Proxy
                 foreach (Context context in _contexts)
                 {
                     context.MySocket.Close();
+                    context.MySocket = null;
+                    context.MyRelaySecurity = null;
+                    context.MySecurity = null;
+                    context.MyTransferBuffer = null;
                 }
+                _contexts.Clear();
+                _contexts = null;
+                _local = null;
+                _remote = null;
+                Console.WriteLine("A connection has just left");
             }
             catch (Exception exception)
             {
@@ -116,10 +122,7 @@ namespace Proxy
                         {
                             TransferBuffer buffer = kvp.Key;
                             Packet packet = kvp.Value;
-
-                            byte[] packet_bytes = packet.GetBytes();
-                            Console.WriteLine("[{0}][{1:X4}][{2} bytes]{3}{4}{6}{5}{6}", context == _local ? "P->C" : "P->S", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Utility.HexDump(packet_bytes), Environment.NewLine);
-
+                            //Print(packet, context == _local ? "P->C" : "P->S");
                             while (true)
                             {
                                 int count = context.MySocket.Send(buffer.Buffer, buffer.Offset, buffer.Size, SocketFlags.None);
@@ -135,75 +138,6 @@ namespace Proxy
                 }
             }
         }
-
-        private void HandleTransferIncoming()
-        {
-            foreach (Context context in _contexts) // Logic event processing
-            {
-                List<Packet> packets = context.MySecurity.TransferIncoming();
-
-                if (packets != null)
-                {
-                    foreach (Packet packet in packets)
-                    {
-                        if (context == _remote)
-                        {
-                            byte[] packet_bytes = packet.GetBytes();
-                            Console.WriteLine("[S->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
-
-                            // Do not pass through these packets.
-                            if (packet.Opcode == 0x5000 || packet.Opcode == 0x9000)
-                            {
-                                continue;
-                            }
-
-                            if (packet.Opcode == 0xA102)
-                            {
-                                byte result = packet.ReadUInt8();
-                                if (result == 1)
-                                {
-                                    uint id = packet.ReadUInt32();
-                                    string ip = packet.ReadAscii();
-                                    ushort port = packet.ReadUInt16();
-
-                                    lock (_silkroadProxy)
-                                    {
-                                        _silkroadProxy.AcceptAgentConnection(ip, port);
-                                    }
-
-                                    Packet new_packet = new Packet(0xA102, true);
-                                    new_packet.WriteUInt8(result);
-                                    new_packet.WriteUInt32(id);
-                                    new_packet.WriteAscii("127.0.0.1");
-                                    new_packet.WriteUInt16(15779);
-
-                                    context.MyRelaySecurity.Send(new_packet);
-
-                                    continue;
-                                }
-                            }
-
-                            context.MyRelaySecurity.Send(packet);
-                        }
-
-                        if (context == _local)
-                        {
-                            byte[] packet_bytes = packet.GetBytes();
-                            Console.WriteLine("[C->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
-
-                            // Do not pass through these packets.
-                            if (packet.Opcode == 0x5000 || packet.Opcode == 0x9000 || packet.Opcode == 0x2001)
-                            {
-                                continue;
-                            }
-
-                            context.MyRelaySecurity.Send(packet);
-                        }
-                    }
-                }
-            }
-        }
-
 
         private void RecvDataStreamNetwork()
         {
@@ -223,5 +157,133 @@ namespace Proxy
                 }
             }
         }
+
+        private void Print(Packet packet, string direct)
+        {
+            byte[] packet_bytes = packet.GetBytes();
+            Console.WriteLine("[" + direct + "][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}",
+                packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "",
+                packet.Massive ? "[Massive]" : "", Environment.NewLine,
+                Utility.HexDump(packet_bytes), Environment.NewLine);
+        }
+
+        private void HandleTransferIncoming()
+        {
+            foreach (Context context in _contexts) // Logic event processing
+            {
+                List<Packet> packets = context.MySecurity.TransferIncoming();
+
+                if (packets != null)
+                {
+                    foreach (Packet packet in packets)
+                    {
+                        if (context == _remote)
+                        {
+                            //Print(packet, "S->P");
+
+                            if (ServerPacketHandler(context, packet))
+                            {
+                                continue;
+                            }
+
+                            context.MyRelaySecurity.Send(packet);
+                        }
+
+                        if (context == _local)
+                        {
+                            //Print(packet, "C->P");
+
+                            if (ClientPacketHandler(context, packet))
+                            {
+                                continue;
+                            }
+
+                            context.MyRelaySecurity.Send(packet);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void Dispose()
+        {
+            Disconnect();
+            System.GC.Collect();
+        }
+        #endregion
+
+        private bool ServerPacketHandler(Context context, Packet packet)
+        {
+            bool retval = false;
+            switch (packet.Opcode)
+            {
+                case 0x5000:
+                case 0x9000:
+                    {
+                        retval = true;
+                    }
+                    break;
+                case 0xA102:
+                    #region handle
+                    {
+                        byte result = packet.ReadUInt8();
+                        if (result == 1)
+                        {
+                            uint id = packet.ReadUInt32();
+                            string ip = packet.ReadAscii();
+                            ushort port = packet.ReadUInt16();
+
+                            lock (_silkroadProxy)
+                            {
+                                _silkroadProxy.AcceptAgentConnection(ip, port);
+                            }
+
+                            Packet new_packet = new Packet(0xA102, true);
+                            new_packet.WriteUInt8(result);
+                            new_packet.WriteUInt32(id);
+                            new_packet.WriteAscii("127.0.0.1");
+                            new_packet.WriteUInt16(15779);
+
+                            context.MyRelaySecurity.Send(new_packet);
+                            retval = true;
+                        }
+
+                    }
+                    #endregion
+                    break;
+                case 0x6100:
+                    {
+                        Print(packet, "S->P");
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return retval;
+        }
+
+        private bool ClientPacketHandler(Context context, Packet packet)
+        {
+            bool retval = false;
+            switch (packet.Opcode)
+            {
+                case 0x2001:
+                case 0x5000:
+                case 0x9000:
+                    {
+                        retval = true;
+                    }
+                    break;
+                case 0x6100:
+                    {
+                        Print(packet, "C->P");
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return retval;
+        }
+
     }
 }
