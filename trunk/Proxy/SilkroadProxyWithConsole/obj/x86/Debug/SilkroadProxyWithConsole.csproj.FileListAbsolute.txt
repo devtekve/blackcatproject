@@ -1,0 +1,5 @@
+D:\workspace\BlackCatBot\Proxy\SilkroadProxyWithConsole\bin\Debug\SilkroadProxyWithConsole.exe
+D:\workspace\BlackCatBot\Proxy\SilkroadProxyWithConsole\bin\Debug\SilkroadProxyWithConsole.pdb
+D:\workspace\BlackCatBot\Proxy\SilkroadProxyWithConsole\obj\x86\Debug\ResolveAssemblyReference.cache
+D:\workspace\BlackCatBot\Proxy\SilkroadProxyWithConsole\obj\x86\Debug\SilkroadProxyWithConsole.exe
+D:\workspace\BlackCatBot\Proxy\SilkroadProxyWithConsole\obj\x86\Debug\SilkroadProxyWithConsole.pdb
