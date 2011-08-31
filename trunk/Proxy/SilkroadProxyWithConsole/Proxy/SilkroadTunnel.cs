@@ -23,9 +23,8 @@ namespace Proxy
 
         private SilkroadProxy _silkroadProxy;
 
-        private Thread remote;
-
-        private Thread local;
+        private Thread _remote;
+        private Thread _local;
 
         public SilkroadTunnel(SilkroadProxy silkroadProxy)
         {
@@ -79,7 +78,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void ConnectRemoteServer(string ip, int port)
         {
@@ -93,7 +92,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void RecvLocalConnectionCallback(IAsyncResult result)
         {
@@ -129,13 +128,13 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void LocalDisconnectCallback(IAsyncResult result)
         {
             try
             {
-                local.Abort();
+                _local.Abort();
             }
             catch (Exception exception)
             {
@@ -147,7 +146,7 @@ namespace Proxy
         {
             try
             {
-                remote.Abort();
+                _remote.Abort();
             }
             catch (Exception exception)
             {
@@ -167,17 +166,17 @@ namespace Proxy
 
                 RecvRemoteConnection();
 
-                remote = new Thread(RemoteThread);
-                remote.Start();
+                _remote = new Thread(RemoteThread);
+                _remote.Start();
 
-                local = new Thread(LocalThread);
-                local.Start();
+                _local = new Thread(LocalThread);
+                _local.Start();
             }
             catch (Exception exception)
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void RecvRemoteConnection()
         {
@@ -190,7 +189,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void RecvRemoteConnectionCallback(IAsyncResult result)
         {
@@ -210,7 +209,7 @@ namespace Proxy
             }
 
 
-        }//ok
+        }
 
         private void LocalThread()
         {
@@ -224,7 +223,7 @@ namespace Proxy
                         foreach (Packet packet in _gwLocalRecvPackets)
                         {
                             byte[] packet_bytes = packet.GetBytes();
-                            //Console.WriteLine("[C->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
+                            Console.WriteLine("[C->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
 
                             // Do not pass through these packets.
                             if (packet.Opcode == 0x5000 || packet.Opcode == 0x9000 || packet.Opcode == 0x2001)
@@ -245,7 +244,7 @@ namespace Proxy
                             TransferBuffer buffer = kvp.Key;
 
                             byte[] packet_bytes = packet.GetBytes();
-                            //Console.WriteLine("[P->C][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
+                            Console.WriteLine("[P->C][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
 
                             _localClient.BeginSend(buffer.Buffer, 0, buffer.Size, SocketFlags.None, new AsyncCallback(SendLocalConnectionCallback), null);
                         }
@@ -258,7 +257,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void RemoteThread()
         {
@@ -272,7 +271,7 @@ namespace Proxy
                         foreach (Packet packet in _gwRemoteRecvPackets)
                         {
                             byte[] packet_bytes = packet.GetBytes();
-                            //Console.WriteLine("[S->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
+                            Console.WriteLine("[S->P][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
 
                             // Do not pass through these packets.
                             if (packet.Opcode == 0x5000 || packet.Opcode == 0x9000)
@@ -319,7 +318,7 @@ namespace Proxy
                             TransferBuffer buffer = kvp.Key;
 
                             byte[] packet_bytes = packet.GetBytes();
-                            //Console.WriteLine("[P->S][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
+                            Console.WriteLine("[P->S][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}", packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "", packet.Massive ? "[Massive]" : "", Environment.NewLine, Utility.HexDump(packet_bytes), Environment.NewLine);
 
                             _remoteClient.BeginSend(buffer.Buffer, 0, buffer.Size, SocketFlags.None, new AsyncCallback(SendRemoteConnectionCallback), null);
                         }
@@ -332,7 +331,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void SendRemoteConnectionCallback(IAsyncResult result)
         {
@@ -344,7 +343,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }      //ok
+        }
 
         private void SendLocalConnectionCallback(IAsyncResult result)
         {
@@ -356,6 +355,6 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
     }
 }
