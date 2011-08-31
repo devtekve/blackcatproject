@@ -12,11 +12,7 @@ namespace Proxy
     class SilkroadProxy
     {
         private Socket _gwLocalServer;
-
-
         private Socket _agLocalServer;
-
-
 
         public SilkroadProxy()
         {
@@ -35,7 +31,6 @@ namespace Proxy
             if (AgentLocalListening())
             {
                 Console.WriteLine("agent local is listening");
-                //AcceptConnection(_agLocalServer);
             }
         }
 
@@ -49,7 +44,7 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private void AcceptGatewayCallback(IAsyncResult result)
         {
@@ -68,17 +63,17 @@ namespace Proxy
             {
                 Console.WriteLine(exception.ToString());
             }
-        }//ok
+        }
 
         private bool GatewayLocalListening()
         {
             return Listening(_gwLocalServer, "127.0.0.1", 15778);
-        }//ok
+        }
 
         private bool AgentLocalListening()
         {
             return Listening(_agLocalServer, "127.0.0.1", 15779);
-        }//ok
+        }
 
         private bool Listening(Socket serverSocket, string ip, int port)
         {
@@ -95,8 +90,7 @@ namespace Proxy
                 Console.WriteLine(exception.ToString());
             }
             return retval;
-        }//ok
-
+        }
 
         private void AcceptAgentCallback(IAsyncResult result)
         {
@@ -116,7 +110,6 @@ namespace Proxy
                 Console.WriteLine(exception.ToString());
             }
         }
-
 
         internal void AcceptAgentConnection(string ip, ushort port)
         {
