@@ -65,6 +65,7 @@ namespace Proxy
             }
         }
 
+        #region listening
         private bool GatewayLocalListening()
         {
             return Listening(_gwLocalServer, "127.0.0.1", 15778);
@@ -91,6 +92,7 @@ namespace Proxy
             }
             return retval;
         }
+        #endregion
 
         private void AcceptAgentCallback(IAsyncResult result)
         {
