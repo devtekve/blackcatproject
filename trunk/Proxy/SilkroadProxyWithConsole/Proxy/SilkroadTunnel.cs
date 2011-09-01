@@ -122,7 +122,7 @@ namespace Proxy
                         {
                             TransferBuffer buffer = kvp.Key;
                             Packet packet = kvp.Value;
-                            //Print(packet, context == _local ? "P->C" : "P->S");
+                            Print(packet, context == _local ? "P->C" : "P->S");
                             while (true)
                             {
                                 int count = context.MySocket.Send(buffer.Buffer, buffer.Offset, buffer.Size, SocketFlags.None);
@@ -253,7 +253,12 @@ namespace Proxy
                     break;
                 case 0x6100:
                     {
-                        Print(packet, "S->P");
+                        //Print(packet, "S->P");
+                    }
+                    break;
+                case 0x6103:
+                    {
+                        //Print(packet, "S->P");
                     }
                     break;
                 default:
@@ -276,7 +281,12 @@ namespace Proxy
                     break;
                 case 0x6100:
                     {
-                        Print(packet, "C->P");
+                        //Print(packet, "C->P");
+                    }
+                    break;
+                case 0x6103:
+                    {
+                        //Print(packet, "C->P");
                     }
                     break;
                 default:

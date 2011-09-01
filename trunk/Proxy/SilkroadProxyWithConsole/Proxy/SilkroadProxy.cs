@@ -48,11 +48,13 @@ namespace Proxy
             {
                 SilkroadTunnel silkroadTunnel = new SilkroadTunnel(this);
                 silkroadTunnel.LocalClient = _gwLocalServer.EndAccept(result);
-                Console.WriteLine("Local connection has been made !");
+                Console.WriteLine("Gateway Local connection has been made !");
+
+                AcceptGatewayConnection();
 
                 silkroadTunnel.Start();
 
-                AcceptGatewayConnection();
+                
 
             }
             catch (Exception exception)
@@ -98,7 +100,7 @@ namespace Proxy
                 SilkroadTunnel silkroadTunnel = new SilkroadTunnel(this);
                 silkroadTunnel.SetRemoteServerAddress(kvp.Key, kvp.Value);
                 silkroadTunnel.LocalClient = _agLocalServer.EndAccept(result);
-                Console.WriteLine("Local connection has been made !");
+                Console.WriteLine("agent local connection has been made !");
 
                 silkroadTunnel.Start();
 
