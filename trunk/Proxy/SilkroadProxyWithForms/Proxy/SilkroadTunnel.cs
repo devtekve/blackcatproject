@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
 using SilkroadSecurityApi;
+using System.Windows.Forms;
 
 namespace Proxy
 {
@@ -19,7 +20,9 @@ namespace Proxy
 
         private List<Context> _contexts;
 
-        public SilkroadTunnel(SilkroadProxy silkroadProxy)
+        private List<SilkroadTunnel> _tunnels;
+
+        public SilkroadTunnel(SilkroadProxy silkroadProxy, List<SilkroadTunnel> tunnels)
         {
             _remoteIP = "123.30.200.6";
             _remotePort = 15779;
@@ -37,6 +40,8 @@ namespace Proxy
             _contexts = new List<Context>();
             _contexts.Add(_local);
             _contexts.Add(_remote);
+
+            _tunnels = tunnels;
         }
 
         public void SetRemoteServerAddress(string ip, ushort port)
@@ -67,31 +72,36 @@ namespace Proxy
             }
             catch (Exception)
             {
-                Dispose();
-            }
-        }
-
-        private void Disconnect()
-        {
-            try
-            {
-                foreach (Context context in _contexts)
+                lock (_tunnels)
                 {
-                    context.MySocket.Close();
-                    context.MySocket = null;
-                    context.MyRelaySecurity = null;
-                    context.MySecurity = null;
-                    context.MyTransferBuffer = null;
+                    _tunnels.Remove(this);
+                    _silkroadProxy.UpdateLabelStartGameButton(_silkroadProxy.HasConnectedClient());
                 }
-                _contexts.Clear();
-                _contexts = null;
-                _local = null;
-                _remote = null;
-                Console.WriteLine("A connection has just left");
+                
+                _silkroadProxy.UpdateNotify("A connection has just left !");
             }
-            catch (Exception exception)
+            finally
             {
-                Console.WriteLine(exception.ToString());
+
+                try
+                {
+                    foreach (Context context in _contexts)
+                    {
+                        context.MySocket.Close();
+                        context.MySocket = null;
+                        context.MyRelaySecurity = null;
+                        context.MySecurity = null;
+                        context.MyTransferBuffer = null;
+                    }
+                    _contexts.Clear();
+                    _contexts = null;
+                    _local = null;
+                    _remote = null;
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                }
             }
         }
 
@@ -122,7 +132,7 @@ namespace Proxy
                         {
                             TransferBuffer buffer = kvp.Key;
                             Packet packet = kvp.Value;
-                            Print(packet, context == _local ? "P->C" : "P->S");
+                            //Print(packet, context == _local ? "P->C" : "P->S");
                             while (true)
                             {
                                 int count = context.MySocket.Send(buffer.Buffer, buffer.Offset, buffer.Size, SocketFlags.None);
@@ -158,14 +168,14 @@ namespace Proxy
             }
         }
 
-        private void Print(Packet packet, string direct)
-        {
-            byte[] packet_bytes = packet.GetBytes();
-            Console.WriteLine("[" + direct + "][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}",
-                packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "",
-                packet.Massive ? "[Massive]" : "", Environment.NewLine,
-                Utility.HexDump(packet_bytes), Environment.NewLine);
-        }
+        //private void Print(Packet packet, string direct)
+        //{
+        //    byte[] packet_bytes = packet.GetBytes();
+        //    Console.WriteLine("[" + direct + "][{0:X4}][{1} bytes]{2}{3}{4}{5}{6}",
+        //        packet.Opcode, packet_bytes.Length, packet.Encrypted ? "[Encrypted]" : "",
+        //        packet.Massive ? "[Massive]" : "", Environment.NewLine,
+        //        Utility.HexDump(packet_bytes), Environment.NewLine);
+        //}
 
         private void HandleTransferIncoming()
         {
@@ -205,11 +215,6 @@ namespace Proxy
             }
         }
 
-        private void Dispose()
-        {
-            Disconnect();
-            System.GC.Collect();
-        }
         #endregion
 
         private bool ServerPacketHandler(Context context, Packet packet)
