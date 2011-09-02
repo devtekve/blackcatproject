@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilkroadProxyWithConsole", "SilkroadProxyWithConsole\SilkroadProxyWithConsole.csproj", "{2E0DFBF9-4486-43EF-A05E-8595B2C5E6A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SilkroadProxyWithForms", "SilkroadProxyWithForms\SilkroadProxyWithForms.csproj", "{59DB395C-FBB3-4A7B-9867-154FDF236CF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,6 +15,10 @@ Global
 		{2E0DFBF9-4486-43EF-A05E-8595B2C5E6A0}.Debug|x86.Build.0 = Debug|x86
 		{2E0DFBF9-4486-43EF-A05E-8595B2C5E6A0}.Release|x86.ActiveCfg = Release|x86
 		{2E0DFBF9-4486-43EF-A05E-8595B2C5E6A0}.Release|x86.Build.0 = Release|x86
+		{59DB395C-FBB3-4A7B-9867-154FDF236CF1}.Debug|x86.ActiveCfg = Debug|x86
+		{59DB395C-FBB3-4A7B-9867-154FDF236CF1}.Debug|x86.Build.0 = Debug|x86
+		{59DB395C-FBB3-4A7B-9867-154FDF236CF1}.Release|x86.ActiveCfg = Release|x86
+		{59DB395C-FBB3-4A7B-9867-154FDF236CF1}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
