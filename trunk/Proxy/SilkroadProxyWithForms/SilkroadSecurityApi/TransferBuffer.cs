@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿
 namespace SilkroadSecurityApi
 {
     /// <summary>
@@ -11,7 +7,7 @@ namespace SilkroadSecurityApi
     /// </summary>
     public class TransferBuffer
     {
-        
+
         byte[] m_buffer;
         int m_offset;
         int m_size;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
+﻿using System.IO;
 
 namespace SilkroadSecurityApi
 {
@@ -10,12 +6,14 @@ namespace SilkroadSecurityApi
     {
         byte[] m_input;
 
+        //don't care about solving problem CA2000
         public PacketReader(byte[] input)
             : base(new MemoryStream(input, false))
         {
             m_input = input;
         }
 
+        //don't need about solving problem CA2000
         public PacketReader(byte[] input, int index, int count)
             : base(new MemoryStream(input, index, count, false))
         {

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 
 namespace SilkroadSecurityApi
 {
-    public class Security
+    public class Security : IDisposable
     {
         #region SecurityFlags
         // Security flags container
@@ -149,10 +147,47 @@ namespace SilkroadSecurityApi
                 0x37, 0xBE, 0xCB, 0xB4, 0xA1, 0x8E, 0xCC, 0xC3, 0x1B, 0xDF, 0x0D, 0x5A, 0x8D, 0xED, 0x02, 0x2D,
             };
 
-            using (MemoryStream in_memory_stream = new MemoryStream(base_security_table, false))
+            //using (MemoryStream in_memory_stream = new MemoryStream(base_security_table, false))
+            //{
+            //    using (BinaryReader reader = new BinaryReader(in_memory_stream))
+            //    {
+            //        int index = 0;
+            //        //CA2202 don't understand this warning
+            //        for (int edi = 0; edi < 1024; edi += 4)
+            //        {
+            //            uint edx = reader.ReadUInt32();
+            //            for (uint ecx = 0; ecx < 256; ++ecx)
+            //            {
+            //                uint eax = ecx >> 1;
+            //                if ((ecx & 1) != 0)
+            //                {
+            //                    eax ^= edx;
+            //                }
+            //                for (int bit = 0; bit < 7; ++bit)
+            //                {
+            //                    if ((eax & 1) != 0)
+            //                    {
+            //                        eax >>= 1;
+            //                        eax ^= edx;
+            //                    }
+            //                    else
+            //                    {
+            //                        eax >>= 1;
+            //                    }
+            //                }
+            //                security_table[index++] = eax;
+            //            }
+            //        }
+            //    }
+            //}
+
+            MemoryStream in_memory_stream = null;
+            try
             {
+                in_memory_stream = new MemoryStream(base_security_table, false);
                 using (BinaryReader reader = new BinaryReader(in_memory_stream))
                 {
+                    in_memory_stream = null;
                     int index = 0;
                     for (int edi = 0; edi < 1024; edi += 4)
                     {
@@ -179,6 +214,13 @@ namespace SilkroadSecurityApi
                             security_table[index++] = eax;
                         }
                     }
+                }
+            }
+            finally
+            {
+                if (in_memory_stream != null)
+                {
+                    in_memory_stream.Dispose();
                 }
             }
 
@@ -299,6 +341,8 @@ namespace SilkroadSecurityApi
 
         object m_class_lock;
 
+        private bool disposed = false;
+
         #region CoreSecurityFunction
         // This function's logic was written by jMerlin as part of the article "How to generate the security bytes for SRO"
         uint GenerateValue(ref uint val)
@@ -404,6 +448,7 @@ namespace SilkroadSecurityApi
             m_security_flags = flags;
             m_client_security = true;
 
+            //don't need about solving problem CA2000
             Packet response = new Packet(0x5000);
 
             response.WriteUInt8(m_security_flag);
@@ -546,6 +591,7 @@ namespace SilkroadSecurityApi
                 tmp_flags.handshake_response = 1;
                 byte tmp_flag = FromSecurityFlags(tmp_flags);
 
+                //CA2000 dont care
                 Packet response = new Packet(0x5000);
                 response.WriteUInt8(tmp_flag);
                 response.WriteUInt64(m_challenge_key);
@@ -631,6 +677,7 @@ namespace SilkroadSecurityApi
                     }
 
                     // Handshake challenge
+                    //CA2000 dont care
                     Packet response = new Packet(0x5000);
                     response.WriteUInt32(m_value_B);
                     response.WriteUInt64(m_client_key);
@@ -648,9 +695,11 @@ namespace SilkroadSecurityApi
                     }
 
                     // Handshake accepted
+                    //CA2000 dont care
                     Packet response1 = new Packet(0x9000);
 
                     // Identify
+                    //CA2000 dont care
                     Packet response2 = new Packet(0x2001, true, false);
                     response2.WriteAscii(m_identity_name);
                     response2.WriteUInt8(m_identity_flag);
@@ -784,46 +833,91 @@ namespace SilkroadSecurityApi
 
             if (packet.Massive)
             {
-                ushort parts = 0;
+                PacketWriter final = null;
+                PacketWriter final_data = null;
+                byte[] raw_bytes = null;
+                PacketReader input_reader = null;
 
-                PacketWriter final = new PacketWriter();
-                PacketWriter final_data = new PacketWriter();
-
-                byte[] input_data = packet.GetBytes();
-                PacketReader input_reader = new PacketReader(input_data);
-
-                TransferBuffer workspace = new TransferBuffer(4089, 0, (int)input_data.Length);
-
-                while (workspace.Size > 0)
+                PacketWriter final_header = null;
+                try
                 {
-                    PacketWriter part_data = new PacketWriter();
+                    ushort parts = 0;
 
-                    int cur_size = workspace.Size > 4089 ? 4089 : workspace.Size; // Max buffer size is 4kb for the client
+                    final = new PacketWriter();
+                    final_data = new PacketWriter();
 
-                    part_data.Write((byte)0); // Data flag
+                    byte[] input_data = packet.GetBytes();
+                    input_reader = new PacketReader(input_data);
 
-                    part_data.Write(input_data, workspace.Offset, cur_size);
 
-                    workspace.Offset += cur_size;
-                    workspace.Size -= cur_size; // Update the size
 
-                    final_data.Write(FormatPacket(0x600D, part_data.GetBytes(), false));
+                    TransferBuffer workspace = new TransferBuffer(4089, 0, (int)input_data.Length);
 
-                    ++parts; // Track how many parts there are
+                    while (workspace.Size > 0)
+                    {
+                        PacketWriter part_data = null;
+                        try
+                        {
+                            part_data = new PacketWriter();
+
+                            int cur_size = workspace.Size > 4089 ? 4089 : workspace.Size; // Max buffer size is 4kb for the client
+
+                            part_data.Write((byte)0); // Data flag
+
+                            part_data.Write(input_data, workspace.Offset, cur_size);
+
+                            workspace.Offset += cur_size;
+                            workspace.Size -= cur_size; // Update the size
+
+                            final_data.Write(FormatPacket(0x600D, part_data.GetBytes(), false));
+
+                            ++parts; // Track how many parts there are
+                        }
+                        finally
+                        {
+                            if (part_data != null)
+                            {
+                                part_data.Dispose();
+                            }
+                        }
+                    }
+
+                    // Write the final header packet to the front of the packet
+                    final_header = new PacketWriter();
+                    final_header.Write((byte)1); // Header flag
+                    final_header.Write((short)parts);
+                    final_header.Write(packet.Opcode);
+                    final.Write(FormatPacket(0x600D, final_header.GetBytes(), false));
+
+                    // Finish the large packet of all the data
+                    final.Write(final_data.GetBytes());
+
+                    // Return the collated data
+                    raw_bytes = final.GetBytes();
+                }
+                finally
+                {
+                    if (final != null)
+                    {
+                        final.Dispose();
+                    }
+
+                    if (final_data != null)
+                    {
+                        final_data.Dispose();
+                    }
+
+                    if (input_reader != null)
+                    {
+                        input_reader.Dispose();
+                    }
+
+                    if (final_header != null)
+                    {
+                        final_header.Dispose();
+                    }
                 }
 
-                // Write the final header packet to the front of the packet
-                PacketWriter final_header = new PacketWriter();
-                final_header.Write((byte)1); // Header flag
-                final_header.Write((short)parts);
-                final_header.Write(packet.Opcode);
-                final.Write(FormatPacket(0x600D, final_header.GetBytes(), false));
-
-                // Finish the large packet of all the data
-                final.Write(final_data.GetBytes());
-
-                // Return the collated data
-                byte[] raw_bytes = final.GetBytes();
                 packet.Lock();
                 return new KeyValuePair<TransferBuffer, Packet>(new TransferBuffer(raw_bytes, 0, raw_bytes.Length, true), packet);
             }
@@ -892,6 +986,55 @@ namespace SilkroadSecurityApi
             m_massive_packet = null;
 
             m_class_lock = new object();
+        }
+
+        // the destructor
+        ~Security()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposeManagedResources)
+        {
+            if (!this.disposed)
+            {
+                if (disposeManagedResources)
+                {
+                    if (m_massive_packet != null)
+                    {
+                        m_massive_packet.Dispose();
+                        m_massive_packet = null;
+                    }
+
+                    if (m_incoming_packets != null)
+                    {
+                        for (int i = 0; i < m_incoming_packets.Count; i++)
+                        {
+                            m_incoming_packets[i].Dispose();
+                            m_incoming_packets[i] = null;
+                        }
+                        m_incoming_packets = null;
+                    }
+
+                    if (m_outgoing_packets != null)
+                    {
+                        for (int i = 0; i < m_outgoing_packets.Count; i++)
+                        {
+                            m_outgoing_packets[i].Dispose();
+                            m_outgoing_packets[i] = null;
+                        }
+                        m_outgoing_packets = null;
+                    }
+                }
+                disposed = true;
+            }
         }
 
         // Changes the 0x2001 identify packet data that will be sent out by
@@ -1082,131 +1225,144 @@ namespace SilkroadSecurityApi
                 {
                     foreach (TransferBuffer buffer in incoming_buffers_tmp)
                     {
-                        bool packet_encrypted = false;
-
-                        int packet_size = buffer.Buffer[1] << 8 | buffer.Buffer[0];
-                        if ((packet_size & 0x8000) > 0)
+                        PacketReader packet_data = null;
+                        try
                         {
-                            if (m_security_flags.blowfish == 1)
+                            bool packet_encrypted = false;
+
+                            int packet_size = buffer.Buffer[1] << 8 | buffer.Buffer[0];
+                            if ((packet_size & 0x8000) > 0)
                             {
-                                packet_size &= 0x7FFF;
-                                packet_encrypted = true;
-                            }
-                            else
-                            {
-                                packet_size &= 0x7FFF;
-                            }
-                        }
-
-                        if (packet_encrypted)
-                        {
-                            byte[] decrypted = m_blowfish.Decode(buffer.Buffer, 2, buffer.Size - 2);
-                            byte[] new_buffer = new byte[6 + packet_size];
-                            Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, new_buffer, 0, 2);
-                            Buffer.BlockCopy(decrypted, 0, new_buffer, 2, 4 + packet_size);
-                            buffer.Buffer = null;
-                            buffer.Buffer = new_buffer;
-                        }
-
-                        PacketReader packet_data = new PacketReader(buffer.Buffer);
-                        packet_size = packet_data.ReadUInt16();
-                        ushort packet_opcode = packet_data.ReadUInt16();
-                        byte packet_security_count = packet_data.ReadByte();
-                        byte packet_security_crc = packet_data.ReadByte();
-
-                        // Client object whose bytes the server might need to verify
-                        if (m_client_security)
-                        {
-                            if (m_security_flags.security_bytes == 1)
-                            {
-                                byte expected_count = GenerateCountByte(true);
-                                if (packet_security_count != expected_count)
+                                if (m_security_flags.blowfish == 1)
                                 {
-                                    throw (new Exception("[SecurityAPI::Recv] Count byte mismatch."));
-                                }
-
-                                if (packet_encrypted || (m_security_flags.security_bytes == 1 && m_security_flags.blowfish == 0))
-                                {
-                                    if (packet_encrypted || m_enc_opcodes.Contains(packet_opcode))
-                                    {
-                                        packet_size |= 0x8000;
-                                        Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, buffer.Buffer, 0, 2);
-                                    }
-                                }
-
-                                buffer.Buffer[5] = 0;
-
-                                byte expected_crc = GenerateCheckByte(buffer.Buffer);
-                                if (packet_security_crc != expected_crc)
-                                {
-                                    throw (new Exception("[SecurityAPI::Recv] CRC byte mismatch."));
-                                }
-
-                                buffer.Buffer[4] = 0;
-
-                                if (packet_encrypted || (m_security_flags.security_bytes == 1 && m_security_flags.blowfish == 0))
-                                {
-                                    if (packet_encrypted || m_enc_opcodes.Contains(packet_opcode))
-                                    {
-                                        packet_size &= 0x7FFF;
-                                        Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, buffer.Buffer, 0, 2);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (packet_opcode == 0x5000 || packet_opcode == 0x9000) // New logic processing!
-                        {
-                            Handshake(packet_opcode, packet_data, packet_encrypted);
-
-                            // Pass the handshake packets to the user so they can at least see them.
-                            // They do not need to actually do anything with them. This was added to
-                            // help debugging and make output logs complete.
-
-                            Packet packet = new Packet(packet_opcode, packet_encrypted, false, buffer.Buffer, 6, packet_size);
-                            packet.Lock();
-                            m_incoming_packets.Add(packet);
-                        }
-                        else
-                        {
-                            if (m_client_security)
-                            {
-                                // Make sure the client accepted the security system first
-                                if (!m_accepted_handshake)
-                                {
-                                    throw (new Exception("[SecurityAPI::Recv] The client has not accepted the handshake."));
-                                }
-                            }
-                            if (packet_opcode == 0x600D) // Auto process massive messages for the user
-                            {
-                                byte mode = packet_data.ReadByte();
-                                if (mode == 1)
-                                {
-                                    m_massive_count = packet_data.ReadUInt16();
-                                    ushort contained_packet_opcode = packet_data.ReadUInt16();
-                                    m_massive_packet = new Packet(contained_packet_opcode, packet_encrypted, true);
+                                    packet_size &= 0x7FFF;
+                                    packet_encrypted = true;
                                 }
                                 else
                                 {
-                                    if (m_massive_packet == null)
+                                    packet_size &= 0x7FFF;
+                                }
+                            }
+
+                            if (packet_encrypted)
+                            {
+                                byte[] decrypted = m_blowfish.Decode(buffer.Buffer, 2, buffer.Size - 2);
+                                byte[] new_buffer = new byte[6 + packet_size];
+                                Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, new_buffer, 0, 2);
+                                Buffer.BlockCopy(decrypted, 0, new_buffer, 2, 4 + packet_size);
+                                buffer.Buffer = null;
+                                buffer.Buffer = new_buffer;
+                            }
+
+                            packet_data = new PacketReader(buffer.Buffer);
+                            packet_size = packet_data.ReadUInt16();
+                            ushort packet_opcode = packet_data.ReadUInt16();
+                            byte packet_security_count = packet_data.ReadByte();
+                            byte packet_security_crc = packet_data.ReadByte();
+
+                            // Client object whose bytes the server might need to verify
+                            if (m_client_security)
+                            {
+                                if (m_security_flags.security_bytes == 1)
+                                {
+                                    byte expected_count = GenerateCountByte(true);
+                                    if (packet_security_count != expected_count)
                                     {
-                                        throw (new Exception("[SecurityAPI::Recv] A malformed 0x600D packet was received."));
+                                        throw (new Exception("[SecurityAPI::Recv] Count byte mismatch."));
                                     }
-                                    m_massive_packet.WriteUInt8Array(packet_data.ReadBytes(packet_size - 1));
-                                    m_massive_count--;
-                                    if (m_massive_count == 0)
+
+                                    if (packet_encrypted || (m_security_flags.security_bytes == 1 && m_security_flags.blowfish == 0))
                                     {
-                                        m_massive_packet.Lock();
-                                        m_incoming_packets.Add(m_massive_packet);
-                                        m_massive_packet = null;
+                                        if (packet_encrypted || m_enc_opcodes.Contains(packet_opcode))
+                                        {
+                                            packet_size |= 0x8000;
+                                            Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, buffer.Buffer, 0, 2);
+                                        }
+                                    }
+
+                                    buffer.Buffer[5] = 0;
+
+                                    byte expected_crc = GenerateCheckByte(buffer.Buffer);
+                                    if (packet_security_crc != expected_crc)
+                                    {
+                                        throw (new Exception("[SecurityAPI::Recv] CRC byte mismatch."));
+                                    }
+
+                                    buffer.Buffer[4] = 0;
+
+                                    if (packet_encrypted || (m_security_flags.security_bytes == 1 && m_security_flags.blowfish == 0))
+                                    {
+                                        if (packet_encrypted || m_enc_opcodes.Contains(packet_opcode))
+                                        {
+                                            packet_size &= 0x7FFF;
+                                            Buffer.BlockCopy(BitConverter.GetBytes((ushort)packet_size), 0, buffer.Buffer, 0, 2);
+                                        }
                                     }
                                 }
                             }
-                            else
+
+                            if (packet_opcode == 0x5000 || packet_opcode == 0x9000) // New logic processing!
                             {
+                                Handshake(packet_opcode, packet_data, packet_encrypted);
+
+                                // Pass the handshake packets to the user so they can at least see them.
+                                // They do not need to actually do anything with them. This was added to
+                                // help debugging and make output logs complete.
+
+                                //CA2000 dont care
                                 Packet packet = new Packet(packet_opcode, packet_encrypted, false, buffer.Buffer, 6, packet_size);
                                 packet.Lock();
                                 m_incoming_packets.Add(packet);
+                            }
+                            else
+                            {
+                                if (m_client_security)
+                                {
+                                    // Make sure the client accepted the security system first
+                                    if (!m_accepted_handshake)
+                                    {
+                                        throw (new Exception("[SecurityAPI::Recv] The client has not accepted the handshake."));
+                                    }
+                                }
+                                if (packet_opcode == 0x600D) // Auto process massive messages for the user
+                                {
+                                    byte mode = packet_data.ReadByte();
+                                    if (mode == 1)
+                                    {
+                                        m_massive_count = packet_data.ReadUInt16();
+                                        ushort contained_packet_opcode = packet_data.ReadUInt16();
+                                        m_massive_packet = new Packet(contained_packet_opcode, packet_encrypted, true);
+                                    }
+                                    else
+                                    {
+                                        if (m_massive_packet == null)
+                                        {
+                                            throw (new Exception("[SecurityAPI::Recv] A malformed 0x600D packet was received."));
+                                        }
+                                        m_massive_packet.WriteUInt8Array(packet_data.ReadBytes(packet_size - 1));
+                                        m_massive_count--;
+                                        if (m_massive_count == 0)
+                                        {
+                                            m_massive_packet.Lock();
+                                            m_incoming_packets.Add(m_massive_packet);
+                                            m_massive_packet = null;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    //CA2000 dont care
+                                    Packet packet = new Packet(packet_opcode, packet_encrypted, false, buffer.Buffer, 6, packet_size);
+                                    packet.Lock();
+                                    m_incoming_packets.Add(packet);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            if (packet_data != null)
+                            {
+                                packet_data.Dispose();
                             }
                         }
                     }

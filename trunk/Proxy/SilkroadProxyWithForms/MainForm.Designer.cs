@@ -16,6 +16,11 @@
             if (disposing && (components != null))
             {
                 components.Dispose();
+                if (_silkroadProxy != null)
+                {
+                    _silkroadProxy.Dispose();
+                    _silkroadProxy = null;
+                }
             }
             base.Dispose(disposing);
         }
@@ -112,6 +117,7 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "Black Cat Bot";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.statusStripLocalListening.ResumeLayout(false);
             this.statusStripLocalListening.PerformLayout();
