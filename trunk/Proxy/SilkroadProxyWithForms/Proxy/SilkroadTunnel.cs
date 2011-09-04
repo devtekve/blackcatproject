@@ -311,6 +311,10 @@ namespace Proxy
                         //Print(packet, "S->P");
                     }
                     break;
+                case 0x2322:
+                    {
+                    }
+                    break;
                 default:
                     break;
             }
