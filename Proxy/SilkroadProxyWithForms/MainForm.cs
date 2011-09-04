@@ -1,15 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using Proxy;
 using StartGamePlatformInvoke;
-using System.Runtime.InteropServices;
-using System.IO;
 
 namespace SilkroadProxyWithForms
 {
@@ -85,7 +77,7 @@ namespace SilkroadProxyWithForms
             if (flag)
             {
                 StartGameButton.Text = "Start Game More";
-            } 
+            }
             else
             {
                 StartGameButton.Text = "Start Game";
@@ -96,6 +88,14 @@ namespace SilkroadProxyWithForms
         {
             UpdateLableStartGameButtonDelegate writer = new UpdateLableStartGameButtonDelegate(WriteLabelStartGameButton);
             this.Invoke(writer, new object[] { flag });
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (_silkroadProxy != null)
+            {
+                _silkroadProxy.Dispose();
+            }
         }
     }
 }

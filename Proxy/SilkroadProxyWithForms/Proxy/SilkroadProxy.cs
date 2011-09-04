@@ -8,13 +8,15 @@ using System.Threading;
 
 namespace Proxy
 {
-    class SilkroadProxy
+    class SilkroadProxy:IDisposable
     {
         private Socket _gwLocalServer;
         private Socket _agLocalServer;
         private MainForm _mainForm;
         private List<SilkroadTunnel> _gatewayTunnels;
         private List<SilkroadTunnel> _agentTunnels;
+
+        private bool disposed = false;
 
         public SilkroadProxy(MainForm mainForm)
         {
@@ -24,6 +26,60 @@ namespace Proxy
             _gatewayTunnels = new List<SilkroadTunnel>();
             _agentTunnels = new List<SilkroadTunnel>();
         }
+
+        // the destructor
+		~SilkroadProxy()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposeManagedResources)
+		{
+			if (!this.disposed)
+			{
+				if (disposeManagedResources)
+				{
+					if (_gwLocalServer != null)
+					{
+						_gwLocalServer.Dispose();
+						_gwLocalServer=null;
+					}
+
+                    if (_agLocalServer != null)
+                    {
+                        _agLocalServer.Dispose();
+                        _agLocalServer = null;
+                    }
+
+                    if (_gatewayTunnels != null)
+                    {
+                        for (int i = 0; i < _gatewayTunnels.Count; i++ )
+                        {
+                            _gatewayTunnels[i].Dispose();
+                            _gatewayTunnels[i] = null;
+                        }
+                        _gatewayTunnels = null;
+                    }
+
+                    if (_agentTunnels != null)
+                    {
+                        for (int i = 0; i < _agentTunnels.Count; i++)
+                        {
+                            _agentTunnels[i].Dispose();
+                            _agentTunnels[i] = null;
+                        }
+                        _agentTunnels = null;
+                    }
+				}
+				disposed=true;
+			}
+		}
 
         #region GUI stuff
         private void UpdateStatusGateway(string msg)
@@ -82,9 +138,11 @@ namespace Proxy
 
         private void AcceptGatewayCallback(IAsyncResult result)
         {
+            SilkroadTunnel silkroadTunnel = null;
             try
             {
-                SilkroadTunnel silkroadTunnel = new SilkroadTunnel(this, _gatewayTunnels);
+                //CA2000 don't care
+                silkroadTunnel = new SilkroadTunnel(this, _gatewayTunnels);
                 silkroadTunnel.LocalClient = _gwLocalServer.EndAccept(result);
                 UpdateNotify("Gateway Local connection has been made !");
 
@@ -100,6 +158,10 @@ namespace Proxy
             }
             catch (Exception exception)
             {
+                if (silkroadTunnel != null)
+                {
+                    silkroadTunnel.Dispose();
+                }
                 MessageBox.Show(exception.ToString());
             }
         }
@@ -134,10 +196,11 @@ namespace Proxy
 
         private void AcceptAgentCallback(IAsyncResult result)
         {
+            SilkroadTunnel silkroadTunnel = null;
             try
             {
                 KeyValuePair<string, ushort> kvp = (KeyValuePair<string, ushort>)result.AsyncState;
-                SilkroadTunnel silkroadTunnel = new SilkroadTunnel(this, _agentTunnels);
+                silkroadTunnel = new SilkroadTunnel(this, _agentTunnels);
                 silkroadTunnel.SetRemoteServerAddress(kvp.Key, kvp.Value);
                 silkroadTunnel.LocalClient = _agLocalServer.EndAccept(result);
                 UpdateNotify("Agent local connection has been made !");
@@ -152,6 +215,10 @@ namespace Proxy
             }
             catch (Exception exception)
             {
+                if (silkroadTunnel != null)
+                {
+                    silkroadTunnel.Dispose();
+                }
                 MessageBox.Show(exception.ToString());
             }
         }

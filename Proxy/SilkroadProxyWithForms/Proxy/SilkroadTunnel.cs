@@ -7,20 +7,26 @@ using System.Windows.Forms;
 
 namespace Proxy
 {
-    class SilkroadTunnel
+    class SilkroadTunnel : IDisposable
     {
         #region don't care
-        private Context _local;
-        private Context _remote;
+        private Context _localContext;
+        private Context _remoteContext;
 
         private string _remoteIP;
         private ushort _remotePort;
+
+        private bool disposed = false;
 
         private SilkroadProxy _silkroadProxy;
 
         private List<Context> _contexts;
 
         private List<SilkroadTunnel> _tunnels;
+
+        private List<KeyValuePair<TransferBuffer, Packet>> _outgoingPackets = null;
+
+        private List<Packet> _incomingPackets = null;
 
         public SilkroadTunnel(SilkroadProxy silkroadProxy, List<SilkroadTunnel> tunnels)
         {
@@ -29,19 +35,72 @@ namespace Proxy
 
             _silkroadProxy = silkroadProxy;
 
-            _local = new Context();
-            _local.MySecurity.GenerateSecurity(true, true, true);
+            _localContext = new Context();
+            _localContext.MySecurity.GenerateSecurity(true, true, true);
 
-            _remote = new Context();
+            _remoteContext = new Context();
 
-            _local.MyRelaySecurity = _remote.MySecurity;
-            _remote.MyRelaySecurity = _local.MySecurity;
+            _localContext.MyRelaySecurity = _remoteContext.MySecurity;
+            _remoteContext.MyRelaySecurity = _localContext.MySecurity;
 
             _contexts = new List<Context>();
-            _contexts.Add(_local);
-            _contexts.Add(_remote);
+            _contexts.Add(_localContext);
+            _contexts.Add(_remoteContext);
 
             _tunnels = tunnels;
+        }
+
+        ~SilkroadTunnel()
+        {
+            Dispose(false);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposeManagedResources)
+        {
+            if (!this.disposed)
+            {
+                if (disposeManagedResources)
+                {
+                    // dispose managed resources
+                    if (_localContext != null)
+                    {
+                        _localContext.Dispose();
+                        _localContext = null;
+                    }
+
+                    if (_remoteContext != null)
+                    {
+                        _remoteContext.Dispose();
+                        _remoteContext = null;
+                    }
+
+                    if (_outgoingPackets != null)
+                    {
+                        foreach (var kvp in _outgoingPackets)
+                        {
+                            kvp.Value.Dispose();
+                        }
+                        _outgoingPackets = null;
+                    }
+
+                    if (_incomingPackets != null)
+                    {
+                        foreach (var packet in _incomingPackets)
+                        {
+                            packet.Dispose();
+                        }
+                        _incomingPackets = null;
+                    }
+                }
+                // dispose unmanaged resources
+                disposed = true;
+            }
         }
 
         public void SetRemoteServerAddress(string ip, ushort port)
@@ -54,7 +113,7 @@ namespace Proxy
         {
             set
             {
-                _local.MySocket = value;
+                _localContext.MySocket = value;
             }
         }
 
@@ -67,17 +126,13 @@ namespace Proxy
         {
             try
             {
-                _remote.MySocket.Connect(ip, port);
+                _remoteContext.MySocket.Connect(ip, port);
                 HandleNetworkDataStream();
             }
             catch (Exception)
             {
-                lock (_tunnels)
-                {
-                    _tunnels.Remove(this);
-                    _silkroadProxy.UpdateLabelStartGameButton(_silkroadProxy.HasConnectedClient());
-                }
                 
+
                 _silkroadProxy.UpdateNotify("A connection has just left !");
             }
             finally
@@ -85,18 +140,12 @@ namespace Proxy
 
                 try
                 {
-                    foreach (Context context in _contexts)
+                    lock (_tunnels)
                     {
-                        context.MySocket.Close();
-                        context.MySocket = null;
-                        context.MyRelaySecurity = null;
-                        context.MySecurity = null;
-                        context.MyTransferBuffer = null;
+                        _tunnels.Remove(this);
+                        _silkroadProxy.UpdateLabelStartGameButton(_silkroadProxy.HasConnectedClient());
+                        Dispose();
                     }
-                    _contexts.Clear();
-                    _contexts = null;
-                    _local = null;
-                    _remote = null;
                 }
                 catch (System.Exception ex)
                 {
@@ -125,10 +174,10 @@ namespace Proxy
             {
                 if (context.MySocket.Poll(0, SelectMode.SelectWrite))
                 {
-                    List<KeyValuePair<TransferBuffer, Packet>> buffers = context.MySecurity.TransferOutgoing();
-                    if (buffers != null)
+                    _outgoingPackets = context.MySecurity.TransferOutgoing();
+                    if (_outgoingPackets != null)
                     {
-                        foreach (KeyValuePair<TransferBuffer, Packet> kvp in buffers)
+                        foreach (KeyValuePair<TransferBuffer, Packet> kvp in _outgoingPackets)
                         {
                             TransferBuffer buffer = kvp.Key;
                             Packet packet = kvp.Value;
@@ -181,13 +230,13 @@ namespace Proxy
         {
             foreach (Context context in _contexts) // Logic event processing
             {
-                List<Packet> packets = context.MySecurity.TransferIncoming();
+                _incomingPackets = context.MySecurity.TransferIncoming();
 
-                if (packets != null)
+                if (_incomingPackets != null)
                 {
-                    foreach (Packet packet in packets)
+                    foreach (Packet packet in _incomingPackets)
                     {
-                        if (context == _remote)
+                        if (context == _remoteContext)
                         {
                             //Print(packet, "S->P");
 
@@ -199,7 +248,7 @@ namespace Proxy
                             context.MyRelaySecurity.Send(packet);
                         }
 
-                        if (context == _local)
+                        if (context == _localContext)
                         {
                             //Print(packet, "C->P");
 
@@ -243,6 +292,7 @@ namespace Proxy
                                 _silkroadProxy.AcceptAgentConnection(ip, port);
                             }
 
+                            //CA2000 don't care
                             Packet new_packet = new Packet(0xA102, true);
                             new_packet.WriteUInt8(result);
                             new_packet.WriteUInt32(id);

@@ -6,7 +6,7 @@ using System.IO;
 
 namespace SilkroadSecurityApi
 {
-    public class Packet
+    public class Packet:IDisposable
     {
         //fields
         private ushort m_opcode;
@@ -23,6 +23,8 @@ namespace SilkroadSecurityApi
         private bool m_locked;
         byte[] m_reader_bytes;
         object m_lock;
+
+        private bool disposed = false;
 
         //properties
         public ushort Opcode
@@ -129,6 +131,41 @@ namespace SilkroadSecurityApi
             m_reader = null;
             m_reader_bytes = null;
         }
+
+        // the destructor
+		~Packet()
+		{
+			Dispose(false);
+		}
+
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+
+		protected virtual void Dispose(bool disposeManagedResources)
+		{
+			if (!this.disposed)
+			{
+				if (disposeManagedResources)
+				{
+					if (m_writer != null)
+					{
+						m_writer.Dispose();
+						m_writer=null;
+					}
+
+                    if (m_reader != null)
+                    {
+                        m_reader.Dispose();
+                        m_reader = null;
+                    }
+				}
+				// dispose unmanaged resources
+				disposed=true;
+			}
+		}
 
         //methods
         public byte[] GetBytes()
