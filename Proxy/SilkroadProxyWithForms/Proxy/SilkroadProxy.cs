@@ -47,13 +47,13 @@ namespace Proxy
 				{
 					if (_gwLocalServer != null)
 					{
-						_gwLocalServer.Dispose();
+                        _gwLocalServer.Close();
 						_gwLocalServer=null;
 					}
 
                     if (_agLocalServer != null)
                     {
-                        _agLocalServer.Dispose();
+                        _agLocalServer.Close();
                         _agLocalServer = null;
                     }
 

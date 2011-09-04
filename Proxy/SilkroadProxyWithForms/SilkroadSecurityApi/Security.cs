@@ -877,7 +877,7 @@ namespace SilkroadSecurityApi
                         {
                             if (part_data != null)
                             {
-                                part_data.Dispose();
+                                part_data.Close();
                             }
                         }
                     }
@@ -899,22 +899,22 @@ namespace SilkroadSecurityApi
                 {
                     if (final != null)
                     {
-                        final.Dispose();
+                        final.Close();
                     }
 
                     if (final_data != null)
                     {
-                        final_data.Dispose();
+                        final_data.Close();
                     }
 
                     if (input_reader != null)
                     {
-                        input_reader.Dispose();
+                        input_reader.Close();
                     }
 
                     if (final_header != null)
                     {
-                        final_header.Dispose();
+                        final_header.Close();
                     }
                 }
 
@@ -1362,7 +1362,7 @@ namespace SilkroadSecurityApi
                         {
                             if (packet_data != null)
                             {
-                                packet_data.Dispose();
+                                packet_data.Close();
                             }
                         }
                     }

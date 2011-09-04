@@ -38,7 +38,7 @@ namespace Proxy
                 {
                     if (_mySocket != null)
                     {
-                        _mySocket.Dispose();
+                        _mySocket.Close();
                         _mySocket = null;
                     }
 
