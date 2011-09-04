@@ -152,13 +152,13 @@ namespace SilkroadSecurityApi
 				{
 					if (m_writer != null)
 					{
-						m_writer.Dispose();
+						m_writer.Close();
 						m_writer=null;
 					}
 
                     if (m_reader != null)
                     {
-                        m_reader.Dispose();
+                        m_reader.Close();
                         m_reader = null;
                     }
 				}
