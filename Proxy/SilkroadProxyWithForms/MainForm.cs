@@ -2,6 +2,8 @@
 using System.Windows.Forms;
 using Proxy;
 using StartGamePlatformInvoke;
+using System.Collections.Generic;
+using System.Text;
 
 namespace SilkroadProxyWithForms
 {
@@ -29,7 +31,7 @@ namespace SilkroadProxyWithForms
             }
         }
 
-        private delegate void UpdateStatusDelegate(string msg);
+        private delegate void WriteDelegate(string msg);
 
         private void WriteStatusGateway(string msg)
         {
@@ -38,7 +40,7 @@ namespace SilkroadProxyWithForms
 
         public void UpdateStatusGateway(string msg)
         {
-            UpdateStatusDelegate writer = new UpdateStatusDelegate(WriteStatusGateway);
+            WriteDelegate writer = new WriteDelegate(WriteStatusGateway);
             this.Invoke(writer, new object[] { msg });
         }
 
@@ -49,7 +51,7 @@ namespace SilkroadProxyWithForms
 
         public void UpdateStatusAgent(string msg)
         {
-            UpdateStatusDelegate writer = new UpdateStatusDelegate(WriteStatusAgent);
+            WriteDelegate writer = new WriteDelegate(WriteStatusAgent);
             this.Invoke(writer, new object[] { msg });
         }
 
@@ -60,14 +62,17 @@ namespace SilkroadProxyWithForms
 
         public void UpdateNotify(string msg)
         {
-            UpdateStatusDelegate writer = new UpdateStatusDelegate(WriteNotify);
+            WriteDelegate writer = new WriteDelegate(WriteNotify);
             this.Invoke(writer, new object[] { msg });
         }
 
         private void StartGameButton_Click(object sender, EventArgs e)
         {
-            _injector = new Injector();
-            _injector.injectDll();
+            if (_injector == null)
+            {
+                _injector = new Injector(this);
+                _injector.injectDll();
+            }
         }
 
         delegate void UpdateLableStartGameButtonDelegate(bool flag);
@@ -77,10 +82,13 @@ namespace SilkroadProxyWithForms
             if (flag)
             {
                 StartGameButton.Text = "Start Game More";
+                StartGameButton.Visible = false;
             }
             else
             {
                 StartGameButton.Text = "Start Game";
+                _injector = null;
+                StartGameButton.Visible = true;
             }
         }
 
@@ -96,6 +104,59 @@ namespace SilkroadProxyWithForms
             {
                 _silkroadProxy.Dispose();
             }
+        }
+
+        private void WriteCharName(string name)
+        {
+            lblCharName.Text = name;
+        }
+
+        public void UpdateCharName(string name)
+        {
+            WriteDelegate writer = new WriteDelegate(WriteCharName);
+            this.Invoke(writer, new object[] { name });
+        }
+
+        delegate void UpdateProgressbarDelegate(uint maxHP, uint valueHP, uint maxMP, uint valueMP);
+
+        private void ChangeProgressBarValue(uint maxHP, uint valueHP, uint maxMP, uint valueMP)
+        {
+            pbCharHP.Maximum = (int) maxHP;
+            pbCharMP.Maximum = (int) maxMP;
+            pbCharHP.Value = (int) valueHP;
+            pbCharMP.Value = (int) valueMP;
+        }
+
+        public void UpdateProgressBarValue(uint maxHP, uint valueHP, uint maxMP, uint valueMP)
+        {
+            UpdateProgressbarDelegate changer = new UpdateProgressbarDelegate(ChangeProgressBarValue);
+            this.Invoke(changer, new object[] { maxHP, valueHP, maxMP, valueMP });
+        }
+
+        delegate void UpdateLogDelegate(string msg);
+
+        private void WriteLog(string msg)
+        {
+            rtbLog.AppendText(msg + Environment.NewLine);
+        }
+
+        public void UpdateLog(string msg)
+        {
+            UpdateLogDelegate writer = new UpdateLogDelegate(WriteLog);
+            this.Invoke(writer, new object[] { msg });
+        }
+
+        delegate void UpdateCoordDelegate(string msg);
+
+        private void WriteCoord(string coord)
+        {
+            lblCharCoord.Text = coord;
+        }
+
+        public void UpdateCoord(string coord)
+        {
+            UpdateCoordDelegate writer = new UpdateCoordDelegate(WriteCoord);
+            this.Invoke(writer, new object[] { coord });
         }
     }
 }

@@ -142,7 +142,7 @@ namespace Proxy
             try
             {
                 //CA2000 don't care
-                silkroadTunnel = new SilkroadTunnel(this, _gatewayTunnels);
+                silkroadTunnel = new SilkroadTunnel(this, _gatewayTunnels, null);
                 silkroadTunnel.LocalClient = _gwLocalServer.EndAccept(result);
                 UpdateNotify("Gateway Local connection has been made !");
 
@@ -200,7 +200,7 @@ namespace Proxy
             try
             {
                 KeyValuePair<string, ushort> kvp = (KeyValuePair<string, ushort>)result.AsyncState;
-                silkroadTunnel = new SilkroadTunnel(this, _agentTunnels);
+                silkroadTunnel = new SilkroadTunnel(this, _agentTunnels, _mainForm);
                 silkroadTunnel.SetRemoteServerAddress(kvp.Key, kvp.Value);
                 silkroadTunnel.LocalClient = _agLocalServer.EndAccept(result);
                 UpdateNotify("Agent local connection has been made !");
