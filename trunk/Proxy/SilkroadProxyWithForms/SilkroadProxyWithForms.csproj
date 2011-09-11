@@ -134,6 +134,10 @@
     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.5.452, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Release\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -145,6 +149,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bot\Charracter.cs" />
+    <Compile Include="Decapcha\image\Border.cs" />
+    <Compile Include="Decapcha\image\FindBestShift.cs" />
+    <Compile Include="Decapcha\image\ImagePreparation.cs" />
+    <Compile Include="Decapcha\ocr\OCRCharacterResult.cs" />
+    <Compile Include="Decapcha\ocr\OCRSymbolsResult.cs" />
+    <Compile Include="Decapcha\ocr\OpticalCharacterRecognition.cs" />
+    <Compile Include="Decapcha\ocr\ReferenceCharacter.cs" />
+    <Compile Include="Decapcha\ocr\ReferenceCharacterDescriptor.cs" />
+    <Compile Include="Decapcha\ocr\ReferenceCharacterStore.cs" />
+    <Compile Include="Decapcha\ocr\SymbolRecognition.cs" />
+    <Compile Include="Decapcha\ocr\SymbolsRecognition.cs" />
+    <Compile Include="Decapcha\CapchaKiller.cs" />
+    <Compile Include="Decapcha\worker\Future.cs" />
+    <Compile Include="Decapcha\worker\Job.cs" />
+    <Compile Include="Decapcha\worker\Runner.cs" />
+    <Compile Include="Decapcha\worker\Worker.cs" />
+    <Compile Include="Decapcha\worker\WorkerThread.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -162,6 +184,7 @@
     <Compile Include="SilkroadSecurityApi\PacketWriter.cs" />
     <Compile Include="SilkroadSecurityApi\Security.cs" />
     <Compile Include="SilkroadSecurityApi\TransferBuffer.cs" />
+    <Compile Include="SilkroadSecurityApi\Utility.cs" />
     <Compile Include="StartGame\Injector.cs" />
     <Compile Include="StartGame\NativeMethods.cs" />
     <EmbeddedResource Include="MainForm.resx">

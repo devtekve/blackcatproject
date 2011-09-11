@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
+using SilkroadProxyWithForms;
 
 namespace StartGamePlatformInvoke
 {
@@ -16,6 +17,7 @@ namespace StartGamePlatformInvoke
         private string _gamepath;
         private string _dllpath;
         private StringBuilder _buffer;
+        private MainForm _mainForm;
 
         #endregion
 
@@ -59,10 +61,11 @@ namespace StartGamePlatformInvoke
         const UInt32 WAIT_TIMEOUT = 0x00000102;
         const UInt32 CREATE_SUSPENDED = 0x00000004;
 
-        public Injector()
+        public Injector(MainForm mainForm)
         {
             _buffer = new StringBuilder(3333);
             _currentpath = Environment.CurrentDirectory;
+            _mainForm = mainForm;
 
             this._configpath = this._currentpath + @"\Config.ini";
             this._dllpath = this._currentpath + @"\Detour.dll";
@@ -136,6 +139,7 @@ namespace StartGamePlatformInvoke
             {
                 MessageBox.Show("injected fail !");
             }
+           
         }
     }
 
